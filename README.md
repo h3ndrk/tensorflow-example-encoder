@@ -17,6 +17,13 @@ The normal Protocol Buffers implementation use generated code from the `*.proto`
 
 The custom C++ Protocol Buffers Serialization uses a custom and hand-crafted implementation of the message serialization instead of the generated code. It is written for larger lists of data (for the PNG images).
 
+To run the benchmarks yourself (docker required, all benchmarks run for ca. 2 minutes):
+
+```bash
+cd benchmark
+./benchmark.sh
+```
+
 ## License
 
 MIT
