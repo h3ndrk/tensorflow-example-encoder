@@ -1,6 +1,4 @@
 native-tensorflow-encode.pb
-tensorflow-example-encoder
-tensorflow-example-encoder.pb
 venv
 __pycache__
 example_pb2.py
@@ -14,3 +12,5 @@ feature.pb.h
 feature.pb.o
 cpp-protobuf-encoder.o
 cpp-protobuf-encoder
+cpp-protobuf-encoder.pb
+custom-protobuf-encoder.pb

@@ -10,17 +10,9 @@ docker run \
     --workdir /data \
     tensorflow/tensorflow:latest-py3 \
     bash -c "time python native-tensorflow-encode.py test.png native-tensorflow-encode.pb"
-# real  1m20.933s
-# user  1m20.012s
-# sys   0m0.562s
-
-################################################################################
-# test custom C++ protobuf implementation
-cp ../build/tensorflow-example-encoder .
-time ./tensorflow-example-encoder test.png tensorflow-example-encoder.pb
-# real  0m0.126s
-# user  0m0.092s
-# sys   0m0.032s
+# real  1m19.747s
+# user  1m18.083s
+# sys   0m0.832s
 
 ################################################################################
 # test python protobuf encoding
@@ -33,9 +25,9 @@ pip install imageio protobuf
 protoc --python_out=. example.proto feature.proto
 
 time python python-protobuf-encoder.py test.png python-protobuf-encoder.pb
-# real  0m0.732s
-# user  0m0.712s
-# sys   0m0.276s
+# real  0m0.723s
+# user  0m0.702s
+# sys   0m0.305s
 
 ################################################################################
 # test C++ protobuf encoding
@@ -45,6 +37,20 @@ g++ -c -o cpp-protobuf-encoder.o cpp-protobuf-encoder.cc
 g++ -o cpp-protobuf-encoder example.pb.o feature.pb.o cpp-protobuf-encoder.o -lprotobuf
 
 time ./cpp-protobuf-encoder test.png cpp-protobuf-encoder.pb
-# real  0m0.255s
-# user  0m0.237s
-# sys   0m0.016s
+# real  0m0.282s
+# user  0m0.268s
+# sys   0m0.013s
+
+################################################################################
+# test custom C++ protobuf encoding
+cd custom-protobuf-encoder
+rm -Rf build
+mkdir build
+cd build
+cmake ..
+make
+cd ../..
+time custom-protobuf-encoder/build/custom-protobuf-encoder test.png custom-protobuf-encoder.pb
+# real  0m0.109s
+# user  0m0.101s
+# sys   0m0.007s
