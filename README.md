@@ -16,3 +16,7 @@ In all benchmarks, a PNG image (640x480x3 `uint8`) gets encoded into a protobuf 
 The normal Protocol Buffers implementation use generated code from the `*.proto` files of the Tensorflow project compiled via `protoc`.
 
 The custom C++ Protocol Buffers Serialization uses a custom and hand-crafted implementation of the message serialization instead of the generated code. It is written for larger lists of data (for the PNG images).
+
+## License
+
+MIT
