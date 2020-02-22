@@ -51,6 +51,6 @@ cmake ..
 make
 cd ../..
 time custom-protobuf-encoder/build/custom-protobuf-encoder test.png custom-protobuf-encoder.pb
-# real  0m0.109s
-# user  0m0.101s
-# sys   0m0.007s
+# real  0m0.162s
+# user  0m0.134s
+# sys   0m0.027s

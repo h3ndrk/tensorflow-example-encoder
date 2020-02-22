@@ -6,7 +6,8 @@
 #include <memory>
 #include <functional>
 
-#include <png.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 struct Varint
 {
@@ -210,113 +211,22 @@ struct Example
     }
     return out;
   }
-  static void png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
-  {
-    reinterpret_cast<std::istream *>(png_get_io_ptr(png_ptr))->read(reinterpret_cast<char *>(data), length);
-  }
-  bool add_png(std::istream &in, const std::string &image_key,
+  bool add_png(const std::string& filename, const std::string &image_key,
                const std::string &image_shape_key)
   {
-    png_structp png_ptr =
-        png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (!png_ptr)
+    int width = 0;
+    int height = 0;
+    int colors_per_pixel = 0;
+    uint8_t *data = stbi_load(filename.c_str(), &width, &height, &colors_per_pixel, 0);
+    if (data == nullptr)
     {
-      std::cerr << "Failed to allocate PNG pointer" << std::endl;
       return false;
     }
 
-    png_infop info_ptr = png_create_info_struct(png_ptr);
-    if (!info_ptr)
-    {
-      std::cerr << "Failed to allocate info pointer" << std::endl;
-      png_destroy_read_struct(&png_ptr, NULL, NULL);
-      return false;
-    }
-
-    if (setjmp(png_jmpbuf(png_ptr)))
-    {
-      png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-      return false;
-    }
-
-    png_set_read_fn(png_ptr, reinterpret_cast<png_voidp>(&in), &Example::png_read_data);
-    png_read_info(png_ptr, info_ptr);
-
-    png_uint_32 width = png_get_image_width(png_ptr, info_ptr);
-    png_uint_32 height = png_get_image_height(png_ptr, info_ptr);
-    png_byte color_type = png_get_color_type(png_ptr, info_ptr);
-    png_byte bit_depth = png_get_bit_depth(png_ptr, info_ptr);
-
-    // strip 16-bit data (convert to 8-bit)
-    if (bit_depth == 16)
-    {
-      png_set_strip_16(png_ptr);
-    }
-
-    // convert palette data to RGB
-    if (color_type == PNG_COLOR_TYPE_PALETTE)
-    {
-      png_set_palette_to_rgb(png_ptr);
-    }
-
-    // expand lower bit depths
-    if (bit_depth < 8)
-    {
-      png_set_expand_gray_1_2_4_to_8(png_ptr);
-    }
-
-    // read tRNS info
-    if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-    {
-      png_set_tRNS_to_alpha(png_ptr);
-    }
-
-    png_read_update_info(png_ptr, info_ptr);
-    color_type = png_get_color_type(png_ptr, info_ptr);
-    bit_depth = png_get_bit_depth(png_ptr, info_ptr);
-
-    if (color_type != PNG_COLOR_TYPE_GRAY && color_type != PNG_COLOR_TYPE_RGB)
-    {
-      std::cerr << "Unknown color_type: " << color_type << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_GRAY: " << PNG_COLOR_TYPE_GRAY << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_PALETTE: " << PNG_COLOR_TYPE_PALETTE << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_RGB: " << PNG_COLOR_TYPE_RGB << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_RGB_ALPHA: " << PNG_COLOR_TYPE_RGB_ALPHA << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_GRAY_ALPHA: " << PNG_COLOR_TYPE_GRAY_ALPHA << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_RGBA: " << PNG_COLOR_TYPE_RGBA << std::endl;
-      std::cerr << "  PNG_COLOR_TYPE_GA: " << PNG_COLOR_TYPE_GA << std::endl;
-      png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-      return false;
-    }
-
-    std::vector<png_byte> pixels(height * png_get_rowbytes(png_ptr, info_ptr));
-    std::vector<png_bytep> row_pointers;
-    for (png_uint_32 y = 0; y < height; ++y)
-    {
-      row_pointers.emplace_back(pixels.data() + png_get_rowbytes(png_ptr, info_ptr));
-    }
-
-    png_read_image(png_ptr, row_pointers.data());
-
-    png_byte colors_per_pixel = color_type == PNG_COLOR_TYPE_GRAY ? 1 : 3;
-    uint64_t color_values_size = width * height * colors_per_pixel;
-
-    std::cout << "width: " << width << std::endl;
-    std::cout << "height: " << height << std::endl;
-    std::cout << "color_type: " << color_type << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_GRAY: " << PNG_COLOR_TYPE_GRAY << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_PALETTE: " << PNG_COLOR_TYPE_PALETTE << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_RGB: " << PNG_COLOR_TYPE_RGB << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_RGB_ALPHA: " << PNG_COLOR_TYPE_RGB_ALPHA << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_GRAY_ALPHA: " << PNG_COLOR_TYPE_GRAY_ALPHA << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_RGBA: " << PNG_COLOR_TYPE_RGBA << std::endl;
-    std::cout << "  PNG_COLOR_TYPE_GA: " << PNG_COLOR_TYPE_GA << std::endl;
-    std::cout << "bit_depth: " << bit_depth << std::endl;
-
-    int64_lists.emplace_back(image_key, std::vector<int64_t>{pixels.begin(), pixels.end()});
+    int64_lists.emplace_back(image_key, std::vector<int64_t>{data, data + (width * height * colors_per_pixel)});
     int64_lists.emplace_back(image_shape_key, std::vector<int64_t>{height, width, colors_per_pixel});
 
-    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    stbi_image_free(data);
 
     return true;
   }
@@ -327,13 +237,7 @@ int main(int argc, char* argv[])
   if (argc != 3)
     return 1;
   Example example;
-  std::ifstream in;
-  in.open(argv[1]);
-  if (in.is_open())
-  {
-    std::cout << "success: " << example.add_png(in, "image", "image_shape") << std::endl;
-  }
-  in.close();
+  example.add_png(argv[1], "image", "image_shape");
   // example.add_png()
   // example.bytes_lists.emplace_back("image_path", std::vector<std::string>{"/root/image.png"});
   // example.int64_lists.emplace_back("image_shape", std::vector<int64_t>{480, 640, 3});
