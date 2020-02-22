@@ -330,11 +330,13 @@ struct Example
   }
 };
 
-int main(void)
+int main(int argc, char* argv[])
 {
+  if (argc != 3)
+    return 1;
   Example example;
   std::ifstream in;
-  in.open("../topImage_748772.png");
+  in.open(argv[1]);
   if (in.is_open())
   {
     std::cout << "success: " << example.add_png(in, "image", "image_shape") << std::endl;
@@ -347,7 +349,7 @@ int main(void)
   // example.float_lists.emplace_back("boxes", std::vector<float>{480.245, 640.4535, 3.345435, 1337.234534, 42.34534});
   example.calculate_size();
   std::ofstream f;
-  f.open("example.pb", std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+  f.open(argv[2], std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
   if (f.is_open())
   {
     f << example;
